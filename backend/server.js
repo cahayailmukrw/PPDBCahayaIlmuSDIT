@@ -1,5 +1,5 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const { Pool } = require('pg');
 const multer = require('multer');
 const cors = require('cors');
 const path = require('path');
@@ -7,6 +7,7 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const ExcelJS = require('exceljs');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,12 +23,6 @@ app.use(express.static(path.join(__dirname, '../frontend')));
 const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Ensure database directory exists
-const dbDir = path.join(__dirname, '../database');
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
 }
 
 // Configure multer for file uploads
@@ -56,13 +51,15 @@ const upload = multer({
 });
 
 // Database setup
-const dbPath = path.join(__dirname, '../database/ppdb.db');
-let db;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 async function startServer() {
   try {
-    db = new sqlite3.Database(dbPath);
-    console.log('Connected to SQLite database');
+    await pool.connect();
+    console.log('Connected to PostgreSQL database');
     await initializeDatabase();
     console.log('Database initialized successfully');
 
@@ -75,12 +72,12 @@ async function startServer() {
   }
 }
 
-function initializeDatabase() {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      // Students table
-      db.run(`CREATE TABLE IF NOT EXISTS students (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+async function initializeDatabase() {
+  try {
+    // Students table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS students (
+        id SERIAL PRIMARY KEY,
         registration_number TEXT UNIQUE,
         full_name TEXT NOT NULL,
         gender TEXT NOT NULL,
@@ -95,50 +92,52 @@ function initializeDatabase() {
         birth_certificate_file TEXT,
         photo_file TEXT,
         status TEXT DEFAULT 'pending',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`, (err) => {
-        if (err) reject(err);
-      });
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-      // Admin table
-      db.run(`CREATE TABLE IF NOT EXISTS admins (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    // Admin table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS admins (
+        id SERIAL PRIMARY KEY,
         username TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`, (err) => {
-        if (err) reject(err);
-      });
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-      // Create default admin if not exists
-      const defaultPassword = bcrypt.hashSync('camucaang', 10);
-      db.run(`INSERT OR IGNORE INTO admins (username, password) VALUES (?, ?)`,
-        ['cahayailmukrw', defaultPassword], (err) => {
-          if (err) reject(err);
-        });
+    // Create default admin if not exists
+    const defaultPassword = bcrypt.hashSync('camucaang', 10);
+    await pool.query(
+      `INSERT INTO admins (username, password) 
+       SELECT $1, $2 
+       WHERE NOT EXISTS (SELECT 1 FROM admins WHERE username = $1)`,
+      ['cahayailmukrw', defaultPassword]
+    );
 
-      // PPDB settings table
-      db.run(`CREATE TABLE IF NOT EXISTS ppdb_settings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    // PPDB settings table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS ppdb_settings (
+        id SERIAL PRIMARY KEY,
         academic_year TEXT NOT NULL,
         quota INTEGER NOT NULL,
         registration_start TEXT NOT NULL,
         registration_end TEXT NOT NULL,
         requirements TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )`, (err) => {
-        if (err) reject(err);
-      });
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
 
-      // Insert default PPDB settings
-      db.run(`INSERT OR IGNORE INTO ppdb_settings (academic_year, quota, registration_start, registration_end, requirements) 
-        VALUES (?, ?, ?, ?, ?)`,
-        ['2026/2027', 100, '2026-01-01', '2026-06-30', 'Kartu Keluarga, Akta Lahir, Pas Foto 3x4'], (err) => {
-          if (err) reject(err);
-          else resolve();
-        });
-    });
-  });
+    // Insert default PPDB settings
+    await pool.query(
+      `INSERT INTO ppdb_settings (academic_year, quota, registration_start, registration_end, requirements)
+       SELECT $1, $2, $3, $4, $5
+       WHERE NOT EXISTS (SELECT 1 FROM ppdb_settings)`,
+      ['2026/2027', 100, '2026-01-01', '2026-06-30', 'Kartu Keluarga, Akta Lahir, Pas Foto 3x4']
+    );
+  } catch (err) {
+    throw err;
+  }
 }
 
 // Generate registration number
@@ -151,14 +150,13 @@ function generateRegistrationNumber() {
 // API Routes
 
 // Get PPDB info
-app.get('/api/ppdb-info', (req, res) => {
-  db.get('SELECT * FROM ppdb_settings ORDER BY id DESC LIMIT 1', (err, row) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json(row || {});
-    }
-  });
+app.get('/api/ppdb-info', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM ppdb_settings ORDER BY id DESC LIMIT 1');
+    res.json(result.rows[0] || {});
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Register student
@@ -166,7 +164,7 @@ app.post('/api/register', upload.fields([
   { name: 'kk', maxCount: 1 },
   { name: 'birthCertificate', maxCount: 1 },
   { name: 'photo', maxCount: 1 }
-]), (req, res) => {
+]), async (req, res) => {
   const {
     fullName,
     gender,
@@ -185,58 +183,57 @@ app.post('/api/register', upload.fields([
 
   const registrationNumber = generateRegistrationNumber();
 
-  const sql = `INSERT INTO students 
-    (registration_number, full_name, gender, birth_place, birth_date, address, 
-     previous_school, father_name, mother_name, whatsapp, kk_file, 
-     birth_certificate_file, photo_file)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-
-  db.run(sql, [
-    registrationNumber, fullName, gender, birthPlace, birthDate, address,
-    previousSchool, fatherName, motherName, whatsapp, kkFile,
-    birthCertificateFile, photoFile
-  ], function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json({
-        success: true,
-        registrationNumber,
-        message: 'Pendaftaran berhasil'
-      });
-    }
-  });
+  try {
+    await pool.query(
+      `INSERT INTO students 
+        (registration_number, full_name, gender, birth_place, birth_date, address, 
+         previous_school, father_name, mother_name, whatsapp, kk_file, 
+         birth_certificate_file, photo_file)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      [registrationNumber, fullName, gender, birthPlace, birthDate, address,
+        previousSchool, fatherName, motherName, whatsapp, kkFile,
+        birthCertificateFile, photoFile]
+    );
+    res.json({
+      success: true,
+      registrationNumber,
+      message: 'Pendaftaran berhasil'
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Check announcement
-app.get('/api/announcement/:registrationNumber', (req, res) => {
+app.get('/api/announcement/:registrationNumber', async (req, res) => {
   const { registrationNumber } = req.params;
 
-  db.get('SELECT * FROM students WHERE registration_number = ?', [registrationNumber], (err, row) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else if (!row) {
+  try {
+    const result = await pool.query('SELECT * FROM students WHERE registration_number = $1', [registrationNumber]);
+    if (result.rows.length === 0) {
       res.json({ found: false, message: 'Nomor pendaftaran tidak ditemukan' });
     } else {
       res.json({
         found: true,
-        fullName: row.full_name,
-        status: row.status
+        fullName: result.rows[0].full_name,
+        status: result.rows[0].status
       });
     }
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Admin login
-app.post('/api/admin/login', (req, res) => {
+app.post('/api/admin/login', async (req, res) => {
   const { username, password } = req.body;
 
-  db.get('SELECT * FROM admins WHERE username = ?', [username], (err, admin) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else if (!admin) {
+  try {
+    const result = await pool.query('SELECT * FROM admins WHERE username = $1', [username]);
+    if (result.rows.length === 0) {
       res.status(401).json({ error: 'Username tidak ditemukan' });
     } else {
+      const admin = result.rows[0];
       const isValid = bcrypt.compareSync(password, admin.password);
       if (isValid) {
         const token = jwt.sign({ id: admin.id }, 'secret-key', { expiresIn: '24h' });
@@ -245,48 +242,46 @@ app.post('/api/admin/login', (req, res) => {
         res.status(401).json({ error: 'Password salah' });
       }
     }
-  });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Get all students (admin)
-app.get('/api/admin/students', (req, res) => {
-  const sql = `SELECT * FROM students ORDER BY created_at DESC`;
-  db.all(sql, [], (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json(rows);
-    }
-  });
+app.get('/api/admin/students', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM students ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Update student status (admin)
-app.put('/api/admin/students/:id', (req, res) => {
+app.put('/api/admin/students/:id', async (req, res) => {
   const { status } = req.body;
   const { id } = req.params;
 
-  db.run('UPDATE students SET status = ? WHERE id = ?', [status, id], function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json({ success: true });
-    }
-  });
+  try {
+    await pool.query('UPDATE students SET status = $1 WHERE id = $2', [status, id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Get statistics (admin)
-app.get('/api/admin/stats', (req, res) => {
-  db.all('SELECT status, COUNT(*) as count FROM students GROUP BY status', [], (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      const stats = {};
-      rows.forEach(row => {
-        stats[row.status] = row.count;
-      });
-      res.json(stats);
-    }
-  });
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT status, COUNT(*) as count FROM students GROUP BY status');
+    const stats = {};
+    result.rows.forEach(row => {
+      stats[row.status] = row.count;
+    });
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Export to Excel (admin)
@@ -310,40 +305,35 @@ app.get('/api/admin/export', async (req, res) => {
       { header: 'Tanggal Daftar', key: 'created_at', width: 20 }
     ];
 
-    db.all('SELECT * FROM students ORDER BY created_at DESC', [], async (err, rows) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-      } else {
-        worksheet.addRows(rows);
+    const result = await pool.query('SELECT * FROM students ORDER BY created_at DESC');
+    worksheet.addRows(result.rows);
 
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', 'attachment; filename=data-pendaftar.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', 'attachment; filename=data-pendaftar.xlsx');
 
-        await workbook.xlsx.write(res);
-        res.end();
-      }
-    });
+    await workbook.xlsx.write(res);
+    res.end();
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
 
 // Update PPDB settings (admin)
-app.put('/api/admin/ppdb-settings', (req, res) => {
+app.put('/api/admin/ppdb-settings', async (req, res) => {
   const { academicYear, quota, registrationStart, registrationEnd, requirements } = req.body;
 
-  const sql = `UPDATE ppdb_settings SET 
-    academic_year = ?, quota = ?, registration_start = ?, 
-    registration_end = ?, requirements = ? 
-    WHERE id = (SELECT id FROM ppdb_settings ORDER BY id DESC LIMIT 1)`;
-
-  db.run(sql, [academicYear, quota, registrationStart, registrationEnd, requirements], function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-    } else {
-      res.json({ success: true });
-    }
-  });
+  try {
+    await pool.query(
+      `UPDATE ppdb_settings SET 
+        academic_year = $1, quota = $2, registration_start = $3, 
+        registration_end = $4, requirements = $5 
+        WHERE id = (SELECT id FROM ppdb_settings ORDER BY id DESC LIMIT 1)`,
+      [academicYear, quota, registrationStart, registrationEnd, requirements]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Serve frontend for all other routes

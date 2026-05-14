@@ -130,7 +130,35 @@ Website menggunakan warna islami:
 
 ## Deployment
 
-### Render (Recommended - Gratis dengan Spin-down)
+### Vercel + PostgreSQL (Recommended - Gratis Tanpa Payment Info)
+
+**Langkah 1: Setup Database PostgreSQL (Gratis)**
+1. Buat akun di Supabase (https://supabase.com) atau Neon (https://neon.tech)
+2. Buat project baru
+3. Copy connection string dari dashboard
+4. Format: `postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT].supabase.co:5432/postgres`
+
+**Langkah 2: Deploy ke Vercel**
+1. Push kode ke GitHub
+2. Buka https://vercel.com
+3. Login dengan GitHub
+4. Klik "Add New Project"
+5. Import repository: cahayailmukrw/PPDBCahayaIlmuSDIT
+6. Konfigurasi Environment Variables:
+   - `DATABASE_URL`: (paste connection string dari Supabase/Neon)
+   - `NODE_ENV`: production
+7. Klik "Deploy"
+8. Tunggu deployment selesai (±2-3 menit)
+9. Website akan live di URL Vercel
+
+**Catatan Vercel:**
+- 100% gratis, tidak perlu info pembayaran
+- Auto-deploy setiap push ke GitHub
+- SSL certificate otomatis
+- Global CDN
+- PostgreSQL database gratis dari Supabase/Neon
+
+### Render (Alternatif - Gratis dengan Spin-down)
 1. Push kode ke GitHub
 2. Buka https://render.com
 3. Login dengan GitHub
@@ -150,15 +178,7 @@ Website menggunakan warna islami:
 - Gratis dengan spin-down setelah 15 menit tidak aktif
 - Cold start ±30 detik saat pertama kali diakses
 - Cocok untuk project dengan traffic rendah
-- SQLite akan tersimpan di Render filesystem
-
-### Railway (Alternatif)
-1. Push kode ke GitHub
-2. Buka https://railway.app
-3. Login dengan GitHub
-4. Klik "New Project" → "Deploy from GitHub repo"
-5. Pilih repository
-6. Deploy (otomatis terdeteksi)
+- Memerlukan info pembayaran (kartu kredit)
 
 ### VPS (Untuk Production Stabil)
 1. Setup VPS (DigitalOcean, Linode, dll)
