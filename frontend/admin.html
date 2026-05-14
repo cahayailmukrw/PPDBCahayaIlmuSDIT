@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - PPDB SDIT Cahaya Ilmu</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .admin-header {
+            background-color: var(--primary-green);
+            color: var(--white);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+
+        .logout-btn {
+            background-color: var(--white);
+            color: var(--primary-green);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .login-section {
+            max-width: 400px;
+            margin: 100px auto;
+            background-color: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .login-section h2 {
+            color: var(--primary-green);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: var(--white);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 48px;
+            color: var(--primary-green);
+            margin-bottom: 10px;
+        }
+
+        .stat-card p {
+            color: var(--dark-gray);
+            font-size: 14px;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            background-color: var(--soft-gray);
+            color: var(--text-color);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary-green);
+            color: var(--white);
+        }
+
+        .tab-content {
+            display: none;
+            background-color: var(--white);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .students-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .students-table th,
+        .students-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .students-table th {
+            background-color: var(--soft-gray);
+            font-weight: 600;
+        }
+
+        .students-table tr:hover {
+            background-color: var(--soft-gray);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background-color: #FFF9C4;
+            color: #F57F17;
+        }
+
+        .status-lulus {
+            background-color: #C8E6C9;
+            color: #2E7D32;
+        }
+
+        .status-cadangan {
+            background-color: #BBDEFB;
+            color: #1565C0;
+        }
+
+        .status-belum-lulus {
+            background-color: #FFCDD2;
+            color: #C62828;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .action-btn-lulus {
+            background-color: #C8E6C9;
+            color: #2E7D32;
+        }
+
+        .action-btn-cadangan {
+            background-color: #BBDEFB;
+            color: #1565C0;
+        }
+
+        .action-btn-tolak {
+            background-color: #FFCDD2;
+            color: #C62828;
+        }
+
+        .export-btn {
+            background-color: var(--primary-green);
+            color: var(--white);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .export-btn:hover {
+            background-color: var(--light-green);
+        }
+
+        .settings-form {
+            max-width: 600px;
+        }
+
+        .settings-form .form-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-form label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .settings-form input,
+        .settings-form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination button {
+            padding: 8px 16px;
+            border: 1px solid var(--border-color);
+            background-color: var(--white);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .pagination button.active {
+            background-color: var(--primary-green);
+            color: var(--white);
+            border-color: var(--primary-green);
+        }
+
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .students-table {
+                font-size: 12px;
+            }
+
+            .students-table th,
+            .students-table td {
+                padding: 8px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Login Section -->
+        <div class="login-section" id="loginSection">
+            <h2>Login Admin</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Login</button>
+            </form>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div id="adminDashboard" style="display: none;">
+            <div class="admin-header">
+                <h1>Admin Panel - PPDB SDIT Cahaya Ilmu</h1>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="totalStudents">0</h3>
+                    <p>Total Pendaftar</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="pendingStudents">0</h3>
+                    <p>Pending</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="lulusStudents">0</h3>
+                    <p>Lulus</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="cadanganStudents">0</h3>
+                    <p>Cadangan</p>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="admin-tabs">
+                <button class="tab-btn active" onclick="showTab('students')">Data Pendaftar</button>
+                <button class="tab-btn" onclick="showTab('settings')">Pengaturan PPDB</button>
+            </div>
+
+            <!-- Students Tab -->
+            <div class="tab-content active" id="studentsTab">
+                <button class="export-btn" onclick="exportToExcel()">Export ke Excel</button>
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Cari berdasarkan nama atau nomor pendaftaran..."
+                        onkeyup="searchStudents()">
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="students-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>No Pendaftaran</th>
+                                <th>Nama</th>
+                                <th>Jenis Kelamin</th>
+                                <th>WhatsApp</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
+            <div class="tab-content" id="settingsTab">
+                <h3>Pengaturan PPDB</h3>
+                <form class="settings-form" id="settingsForm">
+                    <div class="form-group">
+                        <label for="academicYear">Tahun Ajaran</label>
+                        <input type="text" id="academicYear" name="academicYear" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="quota">Kuota Siswa</label>
+                        <input type="number" id="quota" name="quota" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registrationStart">Tanggal Mulai Pendaftaran</label>
+                        <input type="date" id="registrationStart" name="registrationStart" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registrationEnd">Tanggal Akhir Pendaftaran</label>
+                        <input type="date" id="registrationEnd" name="registrationEnd" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="requirements">Syarat Pendaftaran (pisahkan dengan koma)</label>
+                        <textarea id="requirements" name="requirements" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Simpan Pengaturan</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>
