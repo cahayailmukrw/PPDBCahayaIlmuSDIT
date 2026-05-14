@@ -130,21 +130,43 @@ Website menggunakan warna islami:
 
 ## Deployment
 
-### Vercel (Recommended untuk Frontend)
+### Render (Recommended - Gratis dengan Spin-down)
 1. Push kode ke GitHub
-2. Import project ke Vercel
-3. Deploy
+2. Buka https://render.com
+3. Login dengan GitHub
+4. Klik "New +" → "Web Service"
+5. Connect repository: cahayailmukrw/PPDBCahayaIlmuSDIT
+6. Konfigurasi:
+   - **Name**: ppdb-cahaya-ilmu
+   - **Environment**: Node
+   - **Build Command**: cd backend && npm install
+   - **Start Command**: cd backend && npm start
+   - **Root Directory**: (kosongkan / root)
+7. Klik "Deploy Web Service"
+8. Tunggu deployment selesai (±2-3 menit)
+9. Website akan live di URL: https://ppdb-cahaya-ilmu.onrender.com
 
-### Heroku / Railway (untuk Backend dengan Database)
-1. Setup PostgreSQL atau gunakan SQLite
-2. Set environment variables
-3. Deploy
+**Catatan Render:**
+- Gratis dengan spin-down setelah 15 menit tidak aktif
+- Cold start ±30 detik saat pertama kali diakses
+- Cocok untuk project dengan traffic rendah
+- SQLite akan tersimpan di Render filesystem
 
-### Hosting Biasa
-1. Build frontend (jika perlu)
-2. Upload ke hosting
-3. Setup Node.js di server
-4. Jalankan dengan PM2 untuk production
+### Railway (Alternatif)
+1. Push kode ke GitHub
+2. Buka https://railway.app
+3. Login dengan GitHub
+4. Klik "New Project" → "Deploy from GitHub repo"
+5. Pilih repository
+6. Deploy (otomatis terdeteksi)
+
+### VPS (Untuk Production Stabil)
+1. Setup VPS (DigitalOcean, Linode, dll)
+2. Install Node.js dan PM2
+3. Clone repository
+4. Install dependencies: cd backend && npm install
+5. Jalankan dengan PM2: pm2 start backend/server.js --name ppdb
+6. Setup Nginx reverse proxy (opsional)
 
 ## Keamanan
 
