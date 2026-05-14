@@ -341,5 +341,17 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
-// Start the server
-startServer();
+// For Vercel serverless deployment
+if (process.env.NODE_ENV === 'production') {
+  // Initialize database before exporting
+  initializeDatabase().then(() => {
+    console.log('Database initialized for Vercel');
+  }).catch(err => {
+    console.error('Database initialization error:', err);
+  });
+  // Export for Vercel
+  module.exports = app;
+} else {
+  // Start server for local development
+  startServer();
+}
