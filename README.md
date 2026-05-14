@@ -31,3 +31,13 @@ Salin `backend/.env.example` menjadi `backend/.env` dan sesuaikan koneksi Postgr
 - Dashboard admin preview dan API pendaftaran
 - Halaman cek pengumuman kelulusan
 - Kontak, dark mode, animasi, dan desain responsif
+
+## Deploy Vercel
+
+1. Buat project baru di Vercel dan pilih repository ini.
+2. Tambahkan secret GitHub berikut pada repository:
+   - `VERCEL_TOKEN`
+   - `VERCEL_ORG_ID`
+   - `VERCEL_PROJECT_ID`
+3. Workflow GitHub Actions akan otomatis menjalankan deploy pada `push` ke `main`.
+4. Konfigurasi `vercel.json` sudah diatur untuk menggunakan folder `frontend`.
