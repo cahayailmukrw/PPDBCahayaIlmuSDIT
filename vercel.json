@@ -2,15 +2,5 @@
   "version": 2,
   "buildCommand": "cd backend && npm install",
   "outputDirectory": "backend",
-  "framework": null,
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/backend/server.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/backend/server.js"
-    }
-  ]
+  "framework": null
 }
