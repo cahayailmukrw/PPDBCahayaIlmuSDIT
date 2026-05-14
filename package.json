@@ -2,9 +2,9 @@
   "name": "ppdb-cahaya-ilmu",
   "version": "1.0.0",
   "description": "PPDB SDIT Cahaya Ilmu",
-  "main": "api/index.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node api/index.js",
+    "start": "node index.js",
     "dev": "node backend/server.js"
   },
   "dependencies": {

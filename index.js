@@ -18,10 +18,10 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from frontend
-app.use(express.static(path.join(__dirname, '../frontend')));
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../uploads');
+const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
@@ -323,10 +323,10 @@ app.put('/api/admin/ppdb-settings', async (req, res) => {
 
 // Serve frontend for all other routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+  res.sendFile(path.join(__dirname, 'frontend/index.html'));
 });
 
-// Initialize database and export for Vercel
+// Initialize database
 initializeDatabase().then(() => {
   console.log('Database initialized successfully');
 }).catch(err => {
