@@ -1,0 +1,16 @@
+{
+  "name": "PPDB SDIT Cahaya Ilmu",
+  "short_name": "PPDB Cahaya Ilmu",
+  "description": "Penerimaan Peserta Didik Baru SDIT Cahaya Ilmu 2026/2027.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fbfa",
+  "theme_color": "#289470",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ]
+}
