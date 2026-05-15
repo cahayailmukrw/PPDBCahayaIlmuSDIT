@@ -1,6 +1,6 @@
 const pool = require('../db');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method === 'PUT') {
     const { academicYear, quota, registrationStart, registrationEnd, requirements } = req.body;
 

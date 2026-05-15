@@ -25,7 +25,7 @@ function generateRegistrationNumber() {
   return `PPDB${year}${random}`;
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -64,10 +64,10 @@ export default async function handler(req, res) {
         previousSchool, fatherName, motherName, whatsapp]
     );
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       registrationNumber,
-      message: 'Pendaftaran berhasil (file upload disabled for Vercel)' 
+      message: 'Pendaftaran berhasil (file upload disabled for Vercel)'
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

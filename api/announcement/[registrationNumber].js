@@ -1,6 +1,6 @@
 const pool = require('../db');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { registrationNumber } = req.query;
 
   if (req.method !== 'GET') {

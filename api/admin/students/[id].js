@@ -1,6 +1,6 @@
 const pool = require('../../db');
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { id } = req.query;
 
   if (req.method === 'PUT') {
