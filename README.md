@@ -220,7 +220,7 @@ Pastikan folder `uploads` ada dan memiliki permission write.
 
 Untuk bantuan atau pertanyaan, hubungi:
 - WhatsApp: +62 812-3456-7890
-- Email: info@sditcahayailmu.sch.id
+- Email: cahayailmukrw@gmail.com
 
 ## License
 
